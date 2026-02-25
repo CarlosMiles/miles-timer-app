@@ -50,6 +50,11 @@ export async function POST(req: NextRequest) {
       );
     `);
 
+    // Add companyName column if it doesn't exist
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Timer" ADD COLUMN IF NOT EXISTS "companyName" TEXT;
+    `);
+
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "Assignment" (
         "id" TEXT NOT NULL,
