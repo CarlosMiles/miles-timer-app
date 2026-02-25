@@ -5,26 +5,39 @@ import { geocodePostcode } from "@/lib/geo";
 
 // GET - List all leads (for admin dashboard)
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.ADMIN_TOKEN}`) {
+  // Check token from query param
+  const { searchParams } = new URL(req.url);
+  const token = searchParams.get("token");
+  
+  if (token !== process.env.ADMIN_TOKEN) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const leads = await prisma.lead.findMany({
-      include: {
-        assignments: {
-          include: { timer: true },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    // Use raw SQL to avoid schema mismatch issues
+    const leads = await prisma.$queryRawUnsafe(
+      `SELECT * FROM "Lead" ORDER BY "createdAt" DESC`
+    );
 
-    return NextResponse.json({ leads });
+    // Get assignments for each lead
+    const leadsWithAssignments = await Promise.all(
+      (Array.isArray(leads) ? leads : []).map(async (lead: any) => {
+        const assignments = await prisma.$queryRawUnsafe(
+          `SELECT a.*, t.name as "timerName", t.email as "timerEmail", t."accessToken" 
+           FROM "Assignment" a 
+           JOIN "Timer" t ON a."timerId" = t.id 
+           WHERE a."leadId" = $1`,
+          lead.id
+        );
+        return { ...lead, assignments: Array.isArray(assignments) ? assignments : [] };
+      })
+    );
+
+    return NextResponse.json({ leads: leadsWithAssignments });
   } catch (error) {
     console.error("Get leads error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch leads" },
+      { error: "Failed to fetch leads", details: String(error) },
       { status: 500 }
     );
   }
