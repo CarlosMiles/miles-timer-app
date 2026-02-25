@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { geocodePostcode, distanceKm } from "@/lib/geo";
-import { sendTimerNotification } from "@/lib/email";
+import { sendTimerEmail } from "@/lib/email";
 
 export async function POST(
   req: NextRequest,
@@ -87,7 +87,7 @@ export async function POST(
       );
 
       // Send email
-      const emailResult = await sendTimerNotification(
+      const emailResult = await sendTimerEmail(
         timer.email,
         timer.name,
         lead,
