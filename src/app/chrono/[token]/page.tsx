@@ -3,14 +3,12 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 
-// Status options with French labels
 const STATUS_OPTIONS = [
-  { value: "A_CONTACTER", label: "À contacter", color: "#6b7280" },
-  { value: "EN_ATTENTE", label: "Mis en relation par Miles Republic", color: "#f59e0b" },
-  { value: "DEVIS_ENVOYE", label: "Devis envoyé", color: "#8b5cf6" },
-  { value: "GAGNE", label: "Gagné", color: "#22c55e" },
-  { value: "PERDU", label: "Perdu", color: "#ef4444" },
-  { value: "PAS_DISPONIBLE", label: "Pas disponible", color: "#9ca3af" },
+  { value: "NON_DISPONIBLE", label: "❌ Non disponible", color: "#dc2626" }, // Rouge vif
+  { value: "DISPONIBLE", label: "✅ Disponible", color: "#22c55e" }, // Vert
+  { value: "DEVIS_ENVOYE", label: "📄 Devis envoyé", color: "#16a34a" }, // Vert plus foncé
+  { value: "GAGNE", label: "🏆 Gagné", color: "#15803d" }, // Vert foncé
+  { value: "PERDU", label: "😞 Perdu", color: "#dc2626" }, // Rouge vif
 ];
 
 interface Assignment {
@@ -23,8 +21,6 @@ interface Assignment {
   participants?: number;
   organizerName: string;
   organizerEmail: string;
-  organizerPhone?: string;
-  notes?: string;
   status: string;
   distanceKm?: number;
   emailSentAt?: string;
@@ -60,7 +56,7 @@ export default function TimerPortal() {
   async function updateStatus(leadId: string, status: string) {
     setUpdating(leadId);
     try {
-      const res = await fetch(`/api/chrono/${token}/lead/${leadId}`, {
+      const res = await fetch(`/api/chrono/${token}/lead/${leadId}/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -83,7 +79,7 @@ export default function TimerPortal() {
   return (
     <div style={styles.container}>
       <header style={styles.header}>
-        <h1 style={styles.title}>🏃 {timer.companyName || timer.name}</h1>
+        <h1 style={styles.title}>🏃 {timer.name}</h1>
         <p style={styles.subtitle}>Portail chronométreur - Miles Republic</p>
       </header>
 
@@ -128,22 +124,29 @@ export default function TimerPortal() {
                 <p style={styles.organizerContact}>
                   <a href={`mailto:${a.organizerEmail}`}>{a.organizerEmail}</a>
                 </p>
-                {a.organizerPhone && (
-                  <p style={styles.organizerContact}>
-                    <a href={`tel:${a.organizerPhone}`}>{a.organizerPhone}</a>
-                  </p>
-                )}
               </div>
 
-              {a.notes && (
-                <div style={styles.notes}>
-                  <h4 style={styles.sectionTitle}>Notes</h4>
-                  <p>{a.notes}</p>
-                </div>
-              )}
+              {/* Quick action buttons */}
+              <div style={styles.quickActions}>
+                <button
+                  onClick={() => updateStatus(a.leadId, "DISPONIBLE")}
+                  disabled={updating === a.leadId || a.status === "DISPONIBLE"}
+                  style={styles.availableButton}
+                >
+                  ✅ Je suis dispo. En savoir plus ici
+                </button>
+                <button
+                  onClick={() => updateStatus(a.leadId, "NON_DISPONIBLE")}
+                  disabled={updating === a.leadId || a.status === "NON_DISPONIBLE"}
+                  style={styles.unavailableButton}
+                >
+                  ❌ Non disponible
+                </button>
+              </div>
 
+              {/* Full status selector */}
               <div style={styles.statusSection}>
-                <h4 style={styles.sectionTitle}>Statut</h4>
+                <h4 style={styles.sectionTitle}>Mettre à jour le statut</h4>
                 <div style={styles.statusGrid}>
                   {STATUS_OPTIONS.map((option) => (
                     <button
@@ -155,6 +158,7 @@ export default function TimerPortal() {
                         backgroundColor:
                           a.status === option.value ? option.color : "#f3f4f6",
                         color: a.status === option.value ? "white" : "#374151",
+                        border: a.status === option.value ? "none" : "1px solid #e5e7eb",
                       }}
                     >
                       {a.status === option.value && "✓ "}
@@ -272,14 +276,38 @@ const styles: Record<string, React.CSSProperties> = {
     margin: "2px 0",
     fontSize: "14px",
   },
-  notes: {
-    background: "#fef3c7",
-    padding: "15px",
+  quickActions: {
+    display: "flex",
+    gap: "10px",
+    marginBottom: "20px",
+    flexWrap: "wrap",
+  },
+  availableButton: {
+    padding: "12px 20px",
+    background: "#22c55e",
+    color: "white",
+    border: "none",
     borderRadius: "8px",
-    marginBottom: "15px",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: 500,
+    flex: "1 1 auto",
+  },
+  unavailableButton: {
+    padding: "12px 20px",
+    background: "#dc2626",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: 500,
+    flex: "1 1 auto",
   },
   statusSection: {
     marginTop: "15px",
+    paddingTop: "15px",
+    borderTop: "1px solid #e5e7eb",
   },
   statusGrid: {
     display: "grid",
@@ -288,10 +316,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
   statusButton: {
     padding: "10px 12px",
-    border: "none",
     borderRadius: "8px",
     cursor: "pointer",
     fontSize: "13px",
     fontWeight: 500,
+    transition: "all 0.2s",
   },
 };
