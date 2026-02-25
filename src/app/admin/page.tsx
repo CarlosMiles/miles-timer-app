@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 
-// French labels for statuses
 const STATUS_LABELS: Record<string, string> = {
   NOUVEAU: "Nouveau",
   TIMERS_CONTACTES: "Timers contactés",
@@ -11,10 +10,8 @@ const STATUS_LABELS: Record<string, string> = {
   GAGNE: "Gagné",
   PERDU: "Perdu",
   PAS_DISPONIBLE: "Pas disponible",
-  A_CONTACTER: "À contacter",
 };
 
-// Colors for statuses
 const STATUS_COLORS: Record<string, string> = {
   NOUVEAU: "#6b7280",
   TIMERS_CONTACTES: "#3b82f6",
@@ -23,7 +20,6 @@ const STATUS_COLORS: Record<string, string> = {
   GAGNE: "#22c55e",
   PERDU: "#ef4444",
   PAS_DISPONIBLE: "#9ca3af",
-  A_CONTACTER: "#6b7280",
 };
 
 interface Lead {
@@ -39,14 +35,11 @@ interface Lead {
   organizerPhone?: string;
   status: string;
   notes?: string;
-  assignments: {
+  timers: {
     id: string;
-    timer: {
-      id: string;
-      name: string;
-      companyName?: string;
-      email: string;
-    };
+    name: string;
+    companyName?: string;
+    email: string;
     status: string;
     distanceKm?: number;
     emailSentAt?: string;
@@ -58,50 +51,46 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [researching, setResearching] = useState<string | null>(null);
-  const [adminToken, setAdminToken] = useState("");
 
-  // Get admin token from URL
+  const ADMIN_TOKEN = typeof window !== "undefined" 
+    ? new URLSearchParams(window.location.search).get("token") || ""
+    : "";
+
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const token = params.get("token") || "";
-      setAdminToken(token);
-      if (token) {
-        fetchLeads(token);
-      } else {
-        setLoading(false);
-        setError("Veuillez ajouter ?token=VOTRE_TOKEN à l'URL");
-      }
-    }
+    fetchLeads();
   }, []);
 
-  async function fetchLeads(token: string) {
+  async function fetchLeads() {
     try {
       const res = await fetch("/api/leads", {
-        headers: { authorization: `Bearer ${token}` },
+        headers: { authorization: `Bearer ${ADMIN_TOKEN}` },
       });
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
-      setLeads(data.leads);
+      const leadsWithTimers = (Array.isArray(data.leads) ? data.leads : []).map((lead: any) => ({
+        ...lead,
+        timers: Array.isArray(lead.timers) ? lead.timers : []
+      }));
+      setLeads(leadsWithTimers);
     } catch (e) {
       setError("Erreur lors du chargement des leads");
+      setLeads([]);
     } finally {
       setLoading(false);
     }
   }
 
   async function launchResearch(leadId: string) {
-    if (!adminToken) return;
     setResearching(leadId);
     try {
       const res = await fetch(`/api/leads/${leadId}/research`, {
         method: "POST",
-        headers: { authorization: `Bearer ${adminToken}` },
+        headers: { authorization: `Bearer ${ADMIN_TOKEN}` },
       });
       if (!res.ok) throw new Error("Failed");
       const data = await res.json();
       alert(`${data.timersContacted} chronométreurs contactés !`);
-      fetchLeads(adminToken);
+      fetchLeads();
     } catch (e) {
       alert("Erreur lors du lancement de la recherche");
     } finally {
@@ -187,22 +176,19 @@ export default function AdminPage() {
                   </span>
                 </td>
                 <td style={styles.td}>
-                  {lead.assignments.length > 0 ? (
+                  {lead.timers.length > 0 ? (
                     <div>
-                      {lead.assignments.map((a) => (
-                        <div key={a.id} style={styles.timerRow}>
-                          {a.timer.name}
+                      {lead.timers.map((t) => (
+                        <div key={t.id} style={styles.timerRow}>
+                          {t.name}
                           <span
                             style={{
                               ...styles.timerBadge,
-                              backgroundColor: STATUS_COLORS[a.status] || "#6b7280",
+                              backgroundColor: STATUS_COLORS[t.status] || "#6b7280",
                             }}
                           >
-                            {STATUS_LABELS[a.status] || a.status}
+                            {STATUS_LABELS[t.status] || t.status}
                           </span>
-                          {a.distanceKm && (
-                            <span style={styles.distance}>{Math.round(a.distanceKm)}km</span>
-                          )}
                         </div>
                       ))}
                     </div>
@@ -314,17 +300,12 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     gap: "8px",
     marginBottom: "4px",
-    flexWrap: "wrap",
   },
   timerBadge: {
     padding: "2px 6px",
     borderRadius: "4px",
     fontSize: "10px",
     color: "white",
-  },
-  distance: {
-    fontSize: "11px",
-    color: "#666",
   },
   noTimers: {
     color: "#9ca3af",
