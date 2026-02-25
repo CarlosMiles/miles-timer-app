@@ -33,7 +33,6 @@ export async function GET(
     return NextResponse.json({
       timer: {
         name: timer.name,
-        companyName: timer.companyName,
         email: timer.email,
       },
       assignments: (Array.isArray(assignments) ? assignments : []).map((a: any) => ({
