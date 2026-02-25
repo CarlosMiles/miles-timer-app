@@ -5,7 +5,7 @@ import { geocodePostcode } from "@/lib/geo";
 
 // GET - List all leads (for admin dashboard)
 export async function GET(req: NextRequest) {
-  // Check token from query param
+  // Check token from Authorization header
   const authHeader = req.headers.get("authorization");
   const token = authHeader?.replace("Bearer ", "");
   
@@ -19,21 +19,32 @@ export async function GET(req: NextRequest) {
       `SELECT * FROM "Lead" ORDER BY "createdAt" DESC`
     );
 
-    // Get assignments for each lead
-    const leadsWithAssignments = await Promise.all(
+    // Get timers (assignments) for each lead
+    const leadsWithTimers = await Promise.all(
       (Array.isArray(leads) ? leads : []).map(async (lead: any) => {
         const assignments = await prisma.$queryRawUnsafe(
-          `SELECT a.*, t.name as "timerName", t.email as "timerEmail", t."accessToken" 
+          `SELECT a.*, t.id as "timerId", t.name as "timerName", t.email as "timerEmail", t."accessToken" 
            FROM "Assignment" a 
            JOIN "Timer" t ON a."timerId" = t.id 
            WHERE a."leadId" = $1`,
           lead.id
         );
-        return { ...lead, assignments: Array.isArray(assignments) ? assignments : [] };
+        
+        // Transform assignments to timers format expected by frontend
+        const timers = (Array.isArray(assignments) ? assignments : []).map((a: any) => ({
+          id: a.timerId,
+          name: a.timerName,
+          email: a.timerEmail,
+          status: a.status,
+          distanceKm: a.distanceKm,
+          emailSentAt: a.emailSentAt,
+        }));
+        
+        return { ...lead, timers };
       })
     );
 
-    return NextResponse.json({ leads: leadsWithAssignments });
+    return NextResponse.json({ leads: leadsWithTimers });
   } catch (error) {
     console.error("Get leads error:", error);
     return NextResponse.json(
