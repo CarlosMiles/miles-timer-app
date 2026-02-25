@@ -22,7 +22,7 @@ export async function GET(
     // Get all assignments for this timer with lead info
     const assignments = await prisma.$queryRawUnsafe(
       `SELECT a.*, l."eventName", l."eventDate", l."city", l."postcode", 
-              l."participants", l."organizerName", l."organizerEmail", l."organizerPhone", l."notes"
+              l."participants", l."organizerName", l."organizerEmail", l."notes"
        FROM "Assignment" a 
        JOIN "Lead" l ON a."leadId" = l.id 
        WHERE a."timerId" = $1 
@@ -45,7 +45,6 @@ export async function GET(
         participants: a.participants,
         organizerName: a.organizerName,
         organizerEmail: a.organizerEmail,
-        organizerPhone: a.organizerPhone,
         notes: a.notes,
         status: a.status,
         distanceKm: a.distanceKm,
