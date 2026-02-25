@@ -6,8 +6,8 @@ import { geocodePostcode } from "@/lib/geo";
 // GET - List all leads (for admin dashboard)
 export async function GET(req: NextRequest) {
   // Check token from query param
-  const { searchParams } = new URL(req.url);
-  const token = searchParams.get("token");
+  const authHeader = req.headers.get("authorization");
+  const token = authHeader?.replace("Bearer ", "");
   
   if (token !== process.env.ADMIN_TOKEN) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
