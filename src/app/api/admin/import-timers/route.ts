@@ -48,7 +48,7 @@ const timers = [
   { name: "Smile Events 27", email: "", phone: "", postcode: "61600", lat: 48.598146, lng: -0.338374, status: "No Partner – No News" },
   { name: "Run'heure", email: "runheure@live.fr", phone: "", postcode: "17330", lat: 46.069645, lng: -0.618154, status: "No Partner – No News" },
   { name: "ChronoPro", email: "bagraph@chronopro.net", phone: "", postcode: "54410", lat: 48.650156, lng: 6.231463, status: "No Partner – No News" },
-  { name: "Timing Zone", email: "manuvignes@timingzone.com", phone: "33610824331", postcode: "6084", lat: 43.620385, lng: 6.970399, status: "No Partner – No News" },
+  { name: "Timing Zone", email: "carlos+testtimertimingzone@miles.team", phone: "33610824331", postcode: "6084", lat: 43.620385, lng: 6.970399, status: "No Partner – No News" },
   { name: "Chrono boost", email: "contact@chronoboost.fr", phone: "33750835952", postcode: "76290", lat: 49.597125, lng: 0.175276, status: "Open to Partnership" },
   { name: "Sport timing caraïbes", email: "frederic.lannet.stc@orange.fr", phone: "", postcode: "97190", lat: 16.207211, lng: -61.493131, status: "No Partner – No News" },
   { name: "M-Chrono", email: "infomchrono@gmail.com", phone: "", postcode: "88200", lat: 48.047426, lng: 6.578077, status: "Partner – Low Coverage" },
