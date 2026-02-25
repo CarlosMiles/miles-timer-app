@@ -14,6 +14,7 @@ export async function POST(
   }
 
   const leadId = params.id;
+  console.log(`[Research] Starting research for lead: ${leadId}`);
 
   try {
     // Get lead using raw SQL
@@ -24,14 +25,17 @@ export async function POST(
     const lead = Array.isArray(leads) ? leads[0] : null;
 
     if (!lead) {
+      console.log(`[Research] Lead not found: ${leadId}`);
       return NextResponse.json({ error: "Lead not found" }, { status: 404 });
     }
+    console.log(`[Research] Found lead: ${lead.eventName} in ${lead.city}`);
 
     // Geocode lead if needed
     let leadLat = lead.lat;
     let leadLng = lead.lng;
 
     if (!leadLat || !leadLng) {
+      console.log(`[Research] Geocoding postcode: ${lead.postcode}`);
       const geo = await geocodePostcode(lead.postcode);
       if (geo) {
         leadLat = geo.lat;
@@ -40,6 +44,7 @@ export async function POST(
           `UPDATE "Lead" SET "lat" = $1, "lng" = $2, "updatedAt" = NOW() WHERE "id" = $3`,
           leadLat, leadLng, leadId
         );
+        console.log(`[Research] Geocoded: ${leadLat}, ${leadLng}`);
       }
     }
 
@@ -54,6 +59,7 @@ export async function POST(
     const timers = await prisma.$queryRawUnsafe(
       `SELECT * FROM "Timer" WHERE "isActive" = true AND "lat" IS NOT NULL AND "lng" IS NOT NULL AND "partnerStatus" != 'No Partner – Refused'`
     );
+    console.log(`[Research] Found ${Array.isArray(timers) ? timers.length : 0} active timers`);
 
     // Find timers within 300km
     const nearbyTimers = (Array.isArray(timers) ? timers : [])
@@ -66,17 +72,24 @@ export async function POST(
       }))
       .filter((t: any) => t.distance <= 300)
       .sort((a: any, b: any) => a.distance - b.distance);
+    
+    console.log(`[Research] Found ${nearbyTimers.length} timers within 300km`);
 
     // Create assignments and send emails
     const results = [];
     for (const { timer, distance } of nearbyTimers) {
+      console.log(`[Research] Processing timer: ${timer.name} (${timer.email}) at ${Math.round(distance)}km`);
+      
       // Check if assignment already exists
       const existing = await prisma.$queryRawUnsafe(
         `SELECT * FROM "Assignment" WHERE "leadId" = $1 AND "timerId" = $2 LIMIT 1`,
         leadId, timer.id
       );
 
-      if (existing && Array.isArray(existing) && existing.length > 0) continue;
+      if (existing && Array.isArray(existing) && existing.length > 0) {
+        console.log(`[Research] Assignment already exists for ${timer.name}`);
+        continue;
+      }
 
       // Create assignment
       const assignmentId = crypto.randomUUID();
@@ -85,20 +98,26 @@ export async function POST(
          VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
         assignmentId, leadId, timer.id, distance, "A_CONTACTER"
       );
+      console.log(`[Research] Created assignment: ${assignmentId}`);
 
       // Send email
+      console.log(`[Research] Sending email to: ${timer.email}`);
       const emailResult = await sendTimerEmail(
         timer.email,
         timer.name,
         lead,
         timer.accessToken
       );
+      console.log(`[Research] Email result:`, emailResult);
 
       if (emailResult.success) {
         await prisma.$executeRawUnsafe(
           `UPDATE "Assignment" SET "emailSentAt" = NOW() WHERE "id" = $1`,
           assignmentId
         );
+        console.log(`[Research] Email sent successfully to ${timer.name}`);
+      } else {
+        console.error(`[Research] Email failed for ${timer.name}:`, emailResult.error);
       }
 
       results.push({
@@ -114,6 +133,7 @@ export async function POST(
       `UPDATE "Lead" SET "status" = $1, "updatedAt" = NOW() WHERE "id" = $2`,
       "TIMERS_CONTACTES", leadId
     );
+    console.log(`[Research] Completed. Contacted ${results.length} timers`);
 
     return NextResponse.json({
       success: true,
@@ -122,7 +142,7 @@ export async function POST(
       results,
     });
   } catch (error) {
-    console.error("Research error:", error);
+    console.error("[Research] Error:", error);
     return NextResponse.json(
       { error: "Failed to launch research", details: String(error) },
       { status: 500 }
