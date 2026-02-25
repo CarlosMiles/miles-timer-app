@@ -124,3 +124,5 @@ Exécutez `npm install` puis `npx prisma generate`.
 ---
 
 **Besoin d'aide ? Envoyez-moi l'erreur exacte.**
+
+# Test deployment - force rebuild
