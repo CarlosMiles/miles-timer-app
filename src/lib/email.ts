@@ -21,7 +21,7 @@ export async function sendTimerEmail(
   },
   accessToken: string
 ) {
-  const portalUrl = `${APP_URL}/chrono/${accessToken}/lead/${lead.id}`;
+  const portalUrl = `${APP_URL}/chrono/${accessToken}`;
 
   const subject = `Nouveau devis - ${lead.eventName} (${lead.city})`;
 
