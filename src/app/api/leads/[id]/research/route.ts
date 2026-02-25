@@ -49,12 +49,15 @@ export async function POST(
       );
     }
 
-    // Get all active timers with location
+    // Get all active timers with location (exclude only "Refused")
     const timers = await prisma.timer.findMany({
       where: {
         isActive: true,
         lat: { not: null },
         lng: { not: null },
+        partnerStatus: {
+          not: "No Partner – Refused",
+        },
       },
     });
 
