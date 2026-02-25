@@ -1,32 +1,33 @@
-// This API endpoint finds timers within 300km and sends them emails
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { geocodePostcode, distanceKm } from "@/lib/geo";
-import { sendTimerEmail } from "@/lib/email";
+import { sendTimerNotification } from "@/lib/email";
 
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Check admin token
   const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.ADMIN_TOKEN}`) {
+  const token = authHeader?.replace("Bearer ", "");
+  if (token !== process.env.ADMIN_TOKEN) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const leadId = params.id;
 
   try {
-    // Get the lead
-    const lead = await prisma.lead.findUnique({
-      where: { id: leadId },
-    });
+    // Get lead using raw SQL
+    const leads = await prisma.$queryRawUnsafe(
+      `SELECT * FROM "Lead" WHERE "id" = $1 LIMIT 1`,
+      leadId
+    );
+    const lead = Array.isArray(leads) ? leads[0] : null;
 
     if (!lead) {
       return NextResponse.json({ error: "Lead not found" }, { status: 404 });
     }
 
-    // Geocode the lead location if needed
+    // Geocode lead if needed
     let leadLat = lead.lat;
     let leadLng = lead.lng;
 
@@ -35,10 +36,10 @@ export async function POST(
       if (geo) {
         leadLat = geo.lat;
         leadLng = geo.lng;
-        await prisma.lead.update({
-          where: { id: leadId },
-          data: { lat: leadLat, lng: leadLng },
-        });
+        await prisma.$executeRawUnsafe(
+          `UPDATE "Lead" SET "lat" = $1, "lng" = $2, "updatedAt" = NOW() WHERE "id" = $3`,
+          leadLat, leadLng, leadId
+        );
       }
     }
 
@@ -50,53 +51,43 @@ export async function POST(
     }
 
     // Get all active timers with location (exclude only "Refused")
-    const timers = await prisma.timer.findMany({
-      where: {
-        isActive: true,
-        lat: { not: null },
-        lng: { not: null },
-        partnerStatus: {
-          not: "No Partner – Refused",
-        },
-      },
-    });
+    const timers = await prisma.$queryRawUnsafe(
+      `SELECT * FROM "Timer" WHERE "isActive" = true AND "lat" IS NOT NULL AND "lng" IS NOT NULL AND "partnerStatus" != 'No Partner – Refused'`
+    );
 
     // Find timers within 300km
-    const nearbyTimers = timers
-      .map((timer) => ({
+    const nearbyTimers = (Array.isArray(timers) ? timers : [])
+      .map((timer: any) => ({
         timer,
         distance: distanceKm(
           { lat: leadLat!, lng: leadLng! },
           { lat: timer.lat!, lng: timer.lng! }
         ),
       }))
-      .filter((t) => t.distance <= 300)
-      .sort((a, b) => a.distance - b.distance);
+      .filter((t: any) => t.distance <= 300)
+      .sort((a: any, b: any) => a.distance - b.distance);
 
     // Create assignments and send emails
     const results = [];
     for (const { timer, distance } of nearbyTimers) {
       // Check if assignment already exists
-      const existing = await prisma.assignment.findUnique({
-        where: {
-          leadId_timerId: { leadId, timerId: timer.id },
-        },
-      });
+      const existing = await prisma.$queryRawUnsafe(
+        `SELECT * FROM "Assignment" WHERE "leadId" = $1 AND "timerId" = $2 LIMIT 1`,
+        leadId, timer.id
+      );
 
-      if (existing) continue;
+      if (existing && Array.isArray(existing) && existing.length > 0) continue;
 
       // Create assignment
-      const assignment = await prisma.assignment.create({
-        data: {
-          leadId,
-          timerId: timer.id,
-          distanceKm: distance,
-          status: "A_CONTACTER",
-        },
-      });
+      const assignmentId = crypto.randomUUID();
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "Assignment" ("id", "leadId", "timerId", "distanceKm", "status", "createdAt", "updatedAt") 
+         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+        assignmentId, leadId, timer.id, distance, "A_CONTACTER"
+      );
 
       // Send email
-      const emailResult = await sendTimerEmail(
+      const emailResult = await sendTimerNotification(
         timer.email,
         timer.name,
         lead,
@@ -104,10 +95,10 @@ export async function POST(
       );
 
       if (emailResult.success) {
-        await prisma.assignment.update({
-          where: { id: assignment.id },
-          data: { emailSentAt: new Date() },
-        });
+        await prisma.$executeRawUnsafe(
+          `UPDATE "Assignment" SET "emailSentAt" = NOW() WHERE "id" = $1`,
+          assignmentId
+        );
       }
 
       results.push({
@@ -119,10 +110,10 @@ export async function POST(
     }
 
     // Update lead status
-    await prisma.lead.update({
-      where: { id: leadId },
-      data: { status: "TIMERS_CONTACTES" },
-    });
+    await prisma.$executeRawUnsafe(
+      `UPDATE "Lead" SET "status" = $1, "updatedAt" = NOW() WHERE "id" = $2`,
+      "TIMERS_CONTACTES", leadId
+    );
 
     return NextResponse.json({
       success: true,
@@ -133,7 +124,7 @@ export async function POST(
   } catch (error) {
     console.error("Research error:", error);
     return NextResponse.json(
-      { error: "Failed to launch research" },
+      { error: "Failed to launch research", details: String(error) },
       { status: 500 }
     );
   }
