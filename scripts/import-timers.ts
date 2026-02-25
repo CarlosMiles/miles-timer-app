@@ -42,7 +42,7 @@ const timers = [
   { name: "Chrono course", email: "contact@chrono-course.com", phone: "33297404351", postcode: "56000", lat: 47.657712, lng: -2.755509, status: "No Partner – No News" },
   { name: "KMS", email: "contact@kms.fr", phone: "", postcode: "13004", lat: 43.308565, lng: 5.400065, status: "No Partner – No News" },
   { name: "OK time", email: "contact@ok-time.fr", phone: "33662668940", postcode: "24660", lat: 45.172676, lng: 0.713485, status: "No Partner – No News" },
-  { name: "Sportimers", email: "sportimers@outlook.fr", phone: "", postcode: "20229", lat: 42.37439, lng: 9.368129, status: "No Partner – No News" },
+  { name: "Sportimers", email: "sportimers@outlook.fr", phone: "", postcode: "20229", lat: 42.37439, lng: 9.368129, status: "No Partner – Refused" },
   { name: "ATS", email: "contact@ats-sport.com", phone: "33467454110", postcode: "34570", lat: 43.58391, lng: 3.764256, status: "No Partner – Refused" }, // REFUSED
   { name: "Espace compétition", email: "contact@espace-competition.com", phone: "", postcode: "49610", lat: 47.399204, lng: -0.536115, status: "No Partner – Refused" }, // REFUSED
   { name: "Performans Karaib", email: "ms.organisations@gmail.com", phone: "", postcode: "97234", lat: 14.640843, lng: -61.06983, status: "No Partner – No News" },
@@ -51,7 +51,7 @@ const timers = [
   { name: "Chrono consult", email: "contact@chronoconsult.fr", phone: "33650132678", postcode: "38240", lat: 47.910769, lng: 0.337603, status: "No Partner – Refused" }, // REFUSED
   { name: "BreizhChrono", email: "", phone: "", postcode: "35520", lat: 48.178066, lng: -1.734116, status: "No Partner – Refused" }, // REFUSED
   { name: "LVO", email: "ludovic@lvorganisation.com", phone: "33677389303", postcode: "74410", lat: 45.833354, lng: 6.164297, status: "No Partner – Refused" }, // REFUSED
-  { name: "Timing Zone", email: "manuvignes@timingzone.com", phone: "33610824331", postcode: "6084", lat: 43.620385, lng: 6.970399, status: "No Partner – No News" },
+  { name: "Timing Zone", email: "manuvignes@timingzone.com", phone: "33610824331", postcode: "6084", lat: 43.620385, lng: 6.970399, status: "No Partner – Refused" },
   { name: "Chronopale", email: "didier.lacroix.stam@wanadoo.fr", phone: "", postcode: "62200", lat: 50.730304, lng: 1.607654, status: "No Partner – Refused" }, // REFUSED
   { name: "Nikrome", email: "contact@nikrome.com", phone: "33607954934", postcode: "84400", lat: 43.904369, lng: 5.434126, status: "Open to Partnership" },
   { name: "Eventicom", email: "contact@eventicom.fr", phone: "33632179785", postcode: "73550", lat: 45.363969, lng: 6.588453, status: "No Partner – No News" },
