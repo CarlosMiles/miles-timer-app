@@ -4,11 +4,11 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 
 const STATUS_OPTIONS = [
-  { value: "NON_DISPONIBLE", label: "❌ Non disponible", color: "#dc2626" }, // Rouge vif
-  { value: "DISPONIBLE", label: "✅ Disponible", color: "#22c55e" }, // Vert
-  { value: "DEVIS_ENVOYE", label: "📄 Devis envoyé", color: "#16a34a" }, // Vert plus foncé
-  { value: "GAGNE", label: "🏆 Gagné", color: "#15803d" }, // Vert foncé
-  { value: "PERDU", label: "😞 Perdu", color: "#dc2626" }, // Rouge vif
+  { value: "NON_DISPONIBLE", label: "❌ Non disponible", color: "#dc2626" },
+  { value: "DISPONIBLE", label: "✅ Disponible", color: "#22c55e" },
+  { value: "DEVIS_ENVOYE", label: "📄 Devis envoyé", color: "#16a34a" },
+  { value: "GAGNE", label: "🏆 Gagné", color: "#15803d" },
+  { value: "PERDU", label: "😞 Perdu", color: "#dc2626" },
 ];
 
 interface Assignment {
@@ -56,7 +56,7 @@ export default function TimerPortal() {
   async function updateStatus(leadId: string, status: string) {
     setUpdating(leadId);
     try {
-      const res = await fetch(`/api/chrono/${token}/lead/${leadId}/status`, {
+      const res = await fetch(`/api/chrono/${token}/lead/${leadId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -126,25 +126,7 @@ export default function TimerPortal() {
                 </p>
               </div>
 
-              {/* Quick action buttons */}
-              <div style={styles.quickActions}>
-                <button
-                  onClick={() => updateStatus(a.leadId, "DISPONIBLE")}
-                  disabled={updating === a.leadId || a.status === "DISPONIBLE"}
-                  style={styles.availableButton}
-                >
-                  ✅ Je suis dispo. En savoir plus ici
-                </button>
-                <button
-                  onClick={() => updateStatus(a.leadId, "NON_DISPONIBLE")}
-                  disabled={updating === a.leadId || a.status === "NON_DISPONIBLE"}
-                  style={styles.unavailableButton}
-                >
-                  ❌ Non disponible
-                </button>
-              </div>
-
-              {/* Full status selector */}
+              {/* Status selector */}
               <div style={styles.statusSection}>
                 <h4 style={styles.sectionTitle}>Mettre à jour le statut</h4>
                 <div style={styles.statusGrid}>
@@ -275,34 +257,6 @@ const styles: Record<string, React.CSSProperties> = {
   organizerContact: {
     margin: "2px 0",
     fontSize: "14px",
-  },
-  quickActions: {
-    display: "flex",
-    gap: "10px",
-    marginBottom: "20px",
-    flexWrap: "wrap",
-  },
-  availableButton: {
-    padding: "12px 20px",
-    background: "#22c55e",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: 500,
-    flex: "1 1 auto",
-  },
-  unavailableButton: {
-    padding: "12px 20px",
-    background: "#dc2626",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: 500,
-    flex: "1 1 auto",
   },
   statusSection: {
     marginTop: "15px",
