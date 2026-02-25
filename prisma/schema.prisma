@@ -61,6 +61,9 @@ model Timer {
   // Is this timer active?
   isActive        Boolean  @default(true)
 
+  // Partner status (from your spreadsheet)
+  partnerStatus   String?  // Partner – High Coverage, Partner – Low Coverage, Open to Partnership, No Partner – Refused, etc.
+
   // Relations - which leads are assigned to this timer
   assignments     Assignment[]
 }
