@@ -26,28 +26,29 @@ export async function POST(req: NextRequest) {
     // Geocode the postcode
     const geo = await geocodePostcode(postcode);
 
-    // Create timer
-    const timer = await prisma.timer.create({
-      data: {
-        name,
-        companyName: companyName || null,
-        email,
-        phone: phone || null,
-        postcode,
-        lat: geo?.lat || null,
-        lng: geo?.lng || null,
-        isActive: true,
-      },
-    });
+    // Create timer using raw SQL
+    const accessToken = crypto.randomUUID();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "Timer" ("id", "name", "email", "phone", "postcode", "lat", "lng", "accessToken", "isActive", "updatedAt") 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())`,
+      crypto.randomUUID(),
+      name,
+      email,
+      phone || null,
+      postcode,
+      geo?.lat || null,
+      geo?.lng || null,
+      accessToken,
+      true
+    );
 
     return NextResponse.json({
       success: true,
       timer: {
-        id: timer.id,
-        name: timer.name,
-        email: timer.email,
-        accessToken: timer.accessToken,
-        portalUrl: `${process.env.APP_URL}/chrono/${timer.accessToken}`,
+        name,
+        email,
+        accessToken,
+        portalUrl: `${process.env.APP_URL}/chrono/${accessToken}`,
       },
     });
   } catch (error) {
@@ -68,15 +69,14 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const timers = await prisma.timer.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+    const timers = await prisma.$queryRawUnsafe(
+      `SELECT * FROM "Timer" ORDER BY "createdAt" DESC`
+    );
 
     return NextResponse.json({
-      timers: timers.map((t) => ({
+      timers: (Array.isArray(timers) ? timers : []).map((t: any) => ({
         id: t.id,
         name: t.name,
-        companyName: t.companyName,
         email: t.email,
         phone: t.phone,
         postcode: t.postcode,
