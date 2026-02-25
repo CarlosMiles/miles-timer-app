@@ -33,7 +33,7 @@ const timers = [
   { name: "Chrono course", email: "contact@chrono-course.com", phone: "33297404351", postcode: "56000", lat: 47.657712, lng: -2.755509, status: "No Partner – No News" },
   { name: "KMS", email: "contact@kms.fr", phone: "", postcode: "13004", lat: 43.308565, lng: 5.400065, status: "No Partner – No News" },
   { name: "OK time", email: "contact@ok-time.fr", phone: "33662668940", postcode: "24660", lat: 45.172676, lng: 0.713485, status: "No Partner – No News" },
-  { name: "Sportimers", email: "sportimers@outlook.fr", phone: "", postcode: "20229", lat: 42.37439, lng: 9.368129, status: "No Partner – No News" },
+  { name: "SportimersTESTCarlos", email: "carlos+sportimers@miles.team", phone: "33684255241", postcode: "20229", lat: 42.37439, lng: 9.368129, status: "No Partner – No News" },
   { name: "Nikrome", email: "contact@nikrome.com", phone: "33607954934", postcode: "84400", lat: 43.904369, lng: 5.434126, status: "Open to Partnership" },
   { name: "Eventicom", email: "contact@eventicom.fr", phone: "33632179785", postcode: "73550", lat: 45.363969, lng: 6.588453, status: "No Partner – No News" },
   { name: "Globalpacing", email: "info@globalpacing.com", phone: "320477857910", postcode: "1350", lat: 50.690616, lng: 4.956583, status: "No Partner – No News" },
