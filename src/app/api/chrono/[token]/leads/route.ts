@@ -1,4 +1,3 @@
-// This API endpoint returns all leads assigned to a timer
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
@@ -9,21 +8,27 @@ export async function GET(
   const { token } = params;
 
   try {
-    // Find timer by access token
-    const timer = await prisma.timer.findUnique({
-      where: { accessToken: token },
-    });
+    // Find timer by access token using raw SQL
+    const timers = await prisma.$queryRawUnsafe(
+      `SELECT * FROM "Timer" WHERE "accessToken" = $1 LIMIT 1`,
+      token
+    );
+    const timer = Array.isArray(timers) ? timers[0] : null;
 
     if (!timer) {
       return NextResponse.json({ error: "Timer not found" }, { status: 404 });
     }
 
-    // Get all assignments for this timer
-    const assignments = await prisma.assignment.findMany({
-      where: { timerId: timer.id },
-      include: { lead: true },
-      orderBy: { createdAt: "desc" },
-    });
+    // Get all assignments for this timer with lead info
+    const assignments = await prisma.$queryRawUnsafe(
+      `SELECT a.*, l."eventName", l."eventDate", l."city", l."postcode", 
+              l."participants", l."organizerName", l."organizerEmail", l."organizerPhone", l."notes"
+       FROM "Assignment" a 
+       JOIN "Lead" l ON a."leadId" = l.id 
+       WHERE a."timerId" = $1 
+       ORDER BY a."createdAt" DESC`,
+      timer.id
+    );
 
     return NextResponse.json({
       timer: {
@@ -31,18 +36,18 @@ export async function GET(
         companyName: timer.companyName,
         email: timer.email,
       },
-      assignments: assignments.map((a) => ({
+      assignments: (Array.isArray(assignments) ? assignments : []).map((a: any) => ({
         id: a.id,
         leadId: a.leadId,
-        eventName: a.lead.eventName,
-        eventDate: a.lead.eventDate,
-        city: a.lead.city,
-        postcode: a.lead.postcode,
-        participants: a.lead.participants,
-        organizerName: a.lead.organizerName,
-        organizerEmail: a.lead.organizerEmail,
-        organizerPhone: a.lead.organizerPhone,
-        notes: a.lead.notes,
+        eventName: a.eventName,
+        eventDate: a.eventDate,
+        city: a.city,
+        postcode: a.postcode,
+        participants: a.participants,
+        organizerName: a.organizerName,
+        organizerEmail: a.organizerEmail,
+        organizerPhone: a.organizerPhone,
+        notes: a.notes,
         status: a.status,
         distanceKm: a.distanceKm,
         emailSentAt: a.emailSentAt,
@@ -52,7 +57,7 @@ export async function GET(
   } catch (error) {
     console.error("Get leads error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch leads" },
+      { error: "Failed to fetch leads", details: String(error) },
       { status: 500 }
     );
   }
